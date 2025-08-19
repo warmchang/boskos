@@ -58,6 +58,9 @@ type Options struct {
 	// If true, clean S3 Buckets.
 	EnableS3BucketsClean bool
 
+	// List of ECR repositories to clean (only cleans images inside).
+	CleanEcrRepositories []string
+
 	// Resource record set types that shoud not be deleted.
 	SkipResourceRecordSetTypes map[string]bool
 }
@@ -104,6 +107,7 @@ var RegionalTypeList = []Type{
 	TargetGroups{},
 	KeyPairs{},
 	S3Bucket{},
+	ContainerImages{},
 }
 
 // Non-regional AWS resource types, in dependency order

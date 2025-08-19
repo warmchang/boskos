@@ -64,6 +64,7 @@ var (
 	excludeTags                common.CommaSeparatedStrings
 	includeTags                common.CommaSeparatedStrings
 	skipResourceRecordSetTypes common.CommaSeparatedStrings
+	cleanEcrRepositories       common.CommaSeparatedStrings
 
 	excludeTM resources.TagMatcher
 	includeTM resources.TagMatcher
@@ -93,6 +94,7 @@ func init() {
 	flag.Var(&includeTags, "include-tags",
 		"Resources must include all of these tags in order to be managed by the janitor. Given as a comma-separated list of tags in key[=value] format; excluding the value will match any tag with that key. Keys can be repeated.")
 	flag.Var(&skipResourceRecordSetTypes, "skip-resource-record-set-types", "A list of resource record types which should not be deleted, splitted using comma.")
+	flag.Var(&cleanEcrRepositories, "clean-ecr-repositories", "Comma-separated list of ECR repositories for which to clean images.")
 
 	prometheus.MustRegister(cleaningTimeHistogram)
 	prometheus.MustRegister(sweepsGauge)
@@ -218,6 +220,7 @@ func cleanResource(res *common.Resource) error {
 		SkipRoute53ManagementCheck: *skipRoute53ManagementCheck,
 		EnableDNSZoneClean:         *enableDNSZoneClean,
 		EnableS3BucketsClean:       *enableS3BucketsClean,
+		CleanEcrRepositories:       cleanEcrRepositories,
 		SkipResourceRecordSetTypes: skipResourceRecordSetTypesSet,
 	}
 
