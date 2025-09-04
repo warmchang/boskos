@@ -636,6 +636,75 @@ def clean_secrets(project, age, filt):
     return 0
 
 
+def list_iam_service_accounts(project):
+    """List all IAM service accounts"""
+    cmd = [
+            'gcloud', 'iam', 'service-accounts', 'list',
+            '--project=%s' % project,
+            '--format=json'
+        ]
+    log('running %s' % cmd)
+
+    output = subprocess.check_output(cmd)
+
+    service_accounts = json.loads(output)
+    return service_accounts
+
+def list_iam_service_accounts_keys(project, sa_email):
+    """List all IAM service account keys for the given service account"""
+    cmd = [
+            'gcloud', 'iam', 'service-accounts', 'keys', 'list',
+            '--project=%s' % project,
+            '--iam-account=%s' % sa_email,
+            '--format=json'
+        ]
+    log('running %s' % cmd)
+
+    output = subprocess.check_output(cmd)
+
+    keys = json.loads(output)
+    return keys
+
+def delete_iam_service_accounts_key(project, sa_email, key_id):
+    """Delete the specified IAM service account key"""
+    cmd = [
+            'gcloud', 'iam', 'service-accounts', 'keys', 'delete',
+            '--quiet',
+            '--project=%s' % project,
+            '--iam-account=%s' % sa_email,
+            key_id,
+        ]
+    log('running %s' % cmd)
+
+    subprocess.check_output(cmd)
+
+def clean_iam_service_account_keys(project):
+    """Clean up IAM service account keys"""
+    errs = []
+
+    service_accounts = list_iam_service_accounts(project)
+    for sa in service_accounts:
+        sa_email = sa['email']
+        keys = list_iam_service_accounts_keys(project, sa_email)
+        for key in keys:
+            # Don't try to delete system-managed keys
+            if key['keyType'] == "SYSTEM_MANAGED":
+                continue
+
+            name = key['name']
+            key_id = name.split('/')[-1]
+            try:
+                delete_iam_service_account_key(project, sa_email, key_id)
+            except Exception as exc:
+                print('Error try to delete resources %s: %r' % (name, exc),
+                      file=sys.stderr)
+                errs.append(exc)
+                continue
+
+    if len(errs) > 0:
+        raise Error('Failed to delete some service account keys: %s' % errs)
+
+
 def activate_service_account(service_account):
     print('[=== Activating service_account %s ===]' % service_account)
     cmd = [
@@ -729,6 +798,13 @@ def main(project, days, hours, filt, rate_limit, service_account, additional_zon
     except ValueError:
         err |= 1  # keep cleaning the other resource
         print('Fail to clean up secrets from project %r' % project, file=sys.stderr)
+
+    # try to clean IAM service-account keys created.
+    try:
+        clean_iam_service_account_keys(project)
+    except Exception:
+        err |= 1  # keep cleaning the other resource
+        print('Fail to clean up IAM service-account keys from project %r' % project, file=sys.stderr)
 
     zones = BASE_ZONES + additional_zones
     gkehub_apis = {'gkehub.googleapis.com', 'staging-gkehub.sandbox.googleapis.com', 'autopush-gkehub.sandbox.googleapis.com'}
