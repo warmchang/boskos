@@ -74,7 +74,8 @@ func run(boskos *boskosClient.Client) error {
 			}
 			options.Resource = res
 			if err := resources.CleanAll(options); err != nil {
-				return errors.Wrapf(err, "Failed to clean resource %q", res.Name)
+				logrus.WithError(err).Errorf("Failed to clean resource %q", res.Name)
+				continue
 			}
 			if err := boskos.UpdateOne(res.Name, common.Cleaning, res.UserData); err != nil {
 				return errors.Wrapf(err, "Failed to update resource %q", res.Name)
