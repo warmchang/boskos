@@ -694,7 +694,7 @@ def clean_iam_service_account_keys(project):
             name = key['name']
             key_id = name.split('/')[-1]
             try:
-                delete_iam_service_account_key(project, sa_email, key_id)
+                delete_iam_service_accounts_key(project, sa_email, key_id)
             except Exception as exc:
                 print('Error try to delete resources %s: %r' % (name, exc),
                       file=sys.stderr)
