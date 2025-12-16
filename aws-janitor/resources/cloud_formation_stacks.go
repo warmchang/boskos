@@ -19,6 +19,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	cfv2 "github.com/aws/aws-sdk-go-v2/service/cloudformation"
@@ -75,6 +76,10 @@ func (cfs CloudFormationStacks) MarkAndSweep(opts Options, set *Set) error {
 			o := &cloudFormationStack{
 				arn:  *stack.StackId,
 				name: *stack.StackName,
+			}
+			// Don't delete stacksets, this a cloudformation stack deployed from the Management Account
+			if strings.HasPrefix(*stack.StackName, "StackSet-") {
+				continue
 			}
 			tags, tagErr := cfs.fetchTags(svc, o.arn)
 			if tagErr != nil {
