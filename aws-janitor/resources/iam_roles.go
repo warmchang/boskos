@@ -67,6 +67,14 @@ func roleIsManaged(role iamv2types.Role) bool {
 	if strings.HasPrefix(*role.Path, "/aws-service-role/") {
 		return false
 	}
+	// Skip AWS reserved roles
+	if strings.HasPrefix(*role.Path, "/aws-reserved") {
+		return false
+	}
+	// Skip Datadog-Integration roles
+	if strings.HasPrefix(*role.RoleName, "DatadogIntegration") {
+		return false
+	}
 
 	return !builtinRoles.Has(*role.RoleName)
 }
@@ -176,9 +184,7 @@ func (r iamRole) delete(svc *iamv2.Client, logger logrus.FieldLogger) error {
 
 	rolePoliciesReq := &iamv2.ListRolePoliciesInput{RoleName: aws2.String(roleName)}
 	err := ListRolePoliciesPages(svc, rolePoliciesReq, func(page *iamv2.ListRolePoliciesOutput, lastPage bool) bool {
-		for _, policyName := range page.PolicyNames {
-			policyNames = append(policyNames, policyName)
-		}
+		policyNames = append(policyNames, page.PolicyNames...)
 		return true
 	})
 
