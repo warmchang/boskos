@@ -69,6 +69,7 @@ RESOURCES_BY_API = {
         Resource('', 'compute', 'disks', None, 'zone', None, False, True, None),
         Resource('', 'compute', 'disks', None, 'region', None, False, True, None),
         Resource('', 'compute', 'firewall-rules', None, None, None, False, True, None),
+        Resource('', 'compute', 'service-attachments', None, 'region', None, False, True, None),
         Resource('', 'compute', 'forwarding-rules', None, 'global', None, False, True, None),
         Resource('', 'compute', 'forwarding-rules', None, 'region', None, False, True, None),
         Resource('', 'compute', 'target-http-proxies', None, 'global', None, False, True, None),
