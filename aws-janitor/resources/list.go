@@ -86,6 +86,7 @@ var RegionalTypeList = []Type{
 	LaunchConfigurations{},
 	LaunchTemplates{},
 	Instances{},
+	FSxLustreFileSystems{},
 	VPCEndpoints{},
 	// Addresses
 	NetworkInterfaces{},
