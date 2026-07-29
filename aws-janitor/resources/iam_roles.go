@@ -75,6 +75,10 @@ func roleIsManaged(role iamv2types.Role) bool {
 	if strings.HasPrefix(*role.RoleName, "DatadogIntegration") {
 		return false
 	}
+	// Skip StackSets execution roles, which are created by AWS when using CloudFormation StackSets
+	if strings.HasPrefix(*role.RoleName, "stacksets-exec") {
+		return false
+	}
 
 	return !builtinRoles.Has(*role.RoleName)
 }
