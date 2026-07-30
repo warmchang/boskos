@@ -30,6 +30,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/sirupsen/logrus"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	"sigs.k8s.io/prow/pkg/logrusutil"
 
@@ -214,11 +215,13 @@ func markAndSweep(opts resources.Options, region string) error {
 		return errors.Wrapf(err, "Error loading %q", *path)
 	}
 
+	var errs []error
+
 	for _, region := range regionList {
 		opts.Region = region
 		for _, typ := range resources.RegionalTypeList {
 			if err := typ.MarkAndSweep(opts, res); err != nil {
-				return errors.Wrapf(err, "Error sweeping %T", typ)
+				errs = append(errs, errors.Wrapf(err, "Error sweeping %T", typ))
 			}
 		}
 	}
@@ -226,13 +229,19 @@ func markAndSweep(opts resources.Options, region string) error {
 	opts.Region = regions.Default
 	for _, typ := range resources.GlobalTypeList {
 		if err := typ.MarkAndSweep(opts, res); err != nil {
-			return errors.Wrapf(err, "Error sweeping %T", typ)
+			errs = append(errs, errors.Wrapf(err, "Error sweeping %T", typ))
 		}
 	}
 
-	sweepCount = res.MarkComplete()
+	if len(errs) == 0 {
+		sweepCount = res.MarkComplete()
+	}
 	if err := res.Save(opts.Config, s3p); err != nil {
-		return errors.Wrapf(err, "Error saving %q", *path)
+		errs = append(errs, errors.Wrapf(err, "Error saving %q", *path))
+	}
+
+	if len(errs) > 0 {
+		return kerrors.NewAggregate(errs)
 	}
 
 	logrus.Infof("swept %d resources", sweepCount)
